@@ -10,8 +10,9 @@
 
 #include "http_message.h"
 
-#define PORT 25565 // Port default
+#define PORT 80 // Port default
 #define LISTEN_BACKLOG 5
+
 
 // Usage: ./webserver <port>
 
