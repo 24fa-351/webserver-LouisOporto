@@ -5,8 +5,11 @@
 #include <sys/socket.h>
 
 #include "http_message.h"
-
+// Handle the case where she needs to implement /static and /stats and /calc
 bool is_complete_http_message(char* buffer) {
+    // if(strncmp(buffer, "/", 1) == 0) {
+    //     return true;
+    // }
     if(strlen(buffer) < 10) {
         return false;
     }
