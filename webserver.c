@@ -19,7 +19,8 @@
 void msg_to_expressions(char* msg, int* a, int* b, char* op) {
     sscanf(msg, "%d %c %d", a, op, b);
 }
-int calc_to_client(int socket_fd, char* expression) {
+
+void calc_to_client(int socket_fd, char* expression) {
     int a;
     int b;
     char op;
@@ -43,13 +44,61 @@ int calc_to_client(int socket_fd, char* expression) {
     char response[1024];
     sprintf(response, "Result: %d\n", result);
     write(socket_fd, response, strlen(response));
-    return 0;
 }
 
-int respond_to_http_client_message(int socket_fd, http_client_message_t* http_msg) {
-    char* response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+void static_to_client(int socket_fd, char* path) {
+    char response[1024];
+    char* file_path = path + 7;
+
+    FILE* file = fopen(file_path, "r");
+    if(file == NULL) {
+        sprintf(response, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
+        write(socket_fd, response, strlen(response));
+        return;
+    }
+
+    sprintf(response, "HTTP/1.1 200 OK\r\nContent-Length: ");
+    fseek(file, 0, SEEK_END);
+    int file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+    char file_content[file_size];
+    fread(file_content, 1, file_size, file);
+    fclose(file);
+
     write(socket_fd, response, strlen(response));
-    return 0;
+    write(socket_fd, file_content, file_size);
+}
+
+// Prints a proper html that lists number of requests (total recevied bytes and sent bytes)
+void get_stats_to_client(int socket_fd) {
+    char response[1024];
+
+    sprintf(response, "Stats: \n");
+
+    write(socket_fd, response, strlen(response));
+}
+int respond_to_http_client_message(int socket_fd, http_client_message_t* http_msg) {
+    
+    if(strncmp(http_msg->method, "GET ", 4) == 0) {
+        char* response = "HTTP/1.1 Good Request\r\nContent-Length: 0\r\n\r\n";
+        write(socket_fd, response, strlen(response));
+        return 0;
+    }
+    if(strncmp(http_msg->method, "/static", 7) == 0) {
+        // Implement /static
+        static_to_client(socket_fd, http_msg->method);
+        return 0;
+    }
+    if(strncmp(http_msg->method, "/stats", 6) == 0) {
+        // Implement /stats
+        get_stats_to_client(socket_fd);
+        return 0;
+    }
+    if(strncmp(http_msg->method, "/calc", 5) == 0) {
+        // Implement /calc
+        calc_to_client(socket_fd, http_msg->method + 6);
+        return 0;
+    }
 }
 
 void handleConnection(int* sockFdPtr) {
@@ -71,21 +120,8 @@ void handleConnection(int* sockFdPtr) {
             close(clientSocket);
             return;
         }
-        
-        if(strncmp(http_msg->method, "GET ", 4) == 0) {
-            respond_to_http_client_message(clientSocket, http_msg);
-        }
-        if(strncmp(http_msg->method, "/", 1) == 0) {
-           if(strncmp(http_msg->method, "/static", 7) == 0) {
-               // Implement /static
-           } else if(strncmp(http_msg->method, "/stats", 6) == 0) {
-               // Implement /stats
-           } else if(strncmp(http_msg->method, "/calc", 5) == 0) {
-               // Implement /calc
-                calc_to_client(clientSocket, http_msg->method + 6);
-           }
-        }
 
+        respond_to_http_client_message(clientSocket, http_msg);
         http_client_message_free(http_msg);
     }
     printf("Done with connection %d\n", clientSocket);
