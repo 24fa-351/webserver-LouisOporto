@@ -10,27 +10,57 @@
 
 #include "http_message.h"
 
-#define PORT 80 // Port default
+#define PORT 25565 // Port default
 #define LISTEN_BACKLOG 5
 
 
 // Usage: ./webserver <port>
 
+void msg_to_expressions(char* msg, int* a, int* b, char* op) {
+    sscanf(msg, "%d %c %d", a, op, b);
+}
+int calc_to_client(int socket_fd, char* expression) {
+    int a;
+    int b;
+    char op;
+
+    msg_to_expressions(expression, &a, &b, &op);
+
+    int result;
+    if(op == '+') {
+        result = a + b;
+    }
+    if(op == '-') {
+        result = a - b;
+    }
+    if(op == '*') {
+        result = a * b;
+    }
+    if(op == '/') {
+        result = a / b;
+    }
+
+    char response[1024];
+    sprintf(response, "Result: %d\n", result);
+    write(socket_fd, response, strlen(response));
+    return 0;
+}
+
 int respond_to_http_client_message(int socket_fd, http_client_message_t* http_msg) {
-  char* response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-  write(socket_fd, response, strlen(response));
-  return 0;
+    char* response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+    write(socket_fd, response, strlen(response));
+    return 0;
 }
 
 void handleConnection(int* sockFdPtr) {
     int clientSocket = *sockFdPtr;
     free(sockFdPtr);
 
-    while(1) {
         printf("Handling connection on %d\n", clientSocket);
+    while(1) {
         http_client_message_t* http_msg;
         http_read_reuslt_t result;
-
+        
         read_http_client_message(clientSocket, &http_msg, &result);
         if(result == BAD_REQUEST) {
             printf("Bad request\n");
@@ -42,7 +72,20 @@ void handleConnection(int* sockFdPtr) {
             return;
         }
         
-        respond_to_http_client_message(clientSocket, http_msg);
+        if(strncmp(http_msg->method, "GET ", 4) == 0) {
+            respond_to_http_client_message(clientSocket, http_msg);
+        }
+        if(strncmp(http_msg->method, "/", 1) == 0) {
+           if(strncmp(http_msg->method, "/static", 7) == 0) {
+               // Implement /static
+           } else if(strncmp(http_msg->method, "/stats", 6) == 0) {
+               // Implement /stats
+           } else if(strncmp(http_msg->method, "/calc", 5) == 0) {
+               // Implement /calc
+                calc_to_client(clientSocket, http_msg->method + 6);
+           }
+        }
+
         http_client_message_free(http_msg);
     }
     printf("Done with connection %d\n", clientSocket);
@@ -80,7 +123,7 @@ void startServer(int port) {
         exit(1);
     }
 
-    printf("Serve started on port: %d\n", port);
+    printf("Server started on port: %d\n", port);
 
     while(1) {
         pthread_t thread;
