@@ -4,22 +4,18 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 
+#include <stdio.h> // For testing
 #include "http_message.h"
 // Handle the case where she needs to implement /static and /stats and /calc
 bool is_complete_http_message(char* buffer) {
-    // if(strncmp(buffer, "/", 1) == 0) {
-    //     return true;
-    // }
-    if(strlen(buffer) < 10) {
+    if(strlen(buffer) < 2) {
         return false;
     }
-    if(strncmp(buffer, "GET ", 4) != 0) {
-        return false;
+    if(strncmp(buffer, "GET ", 4) == 0) {
+        if(strncmp(buffer + strlen(buffer) - 4, "\r\n\r\n", 4) != 0) {
+            return false;
+        }
     }
-    if (strncmp(buffer + strlen(buffer) - 2, "\n\n", 2) != 0) {
-        return false;
-    }
-
     return true;
 }
 
@@ -29,7 +25,7 @@ void read_http_client_message(int socket_fd, http_client_message_t** msg, http_r
     strcpy(buffer, "");
 
     while(!is_complete_http_message(buffer)) {
-        int bytes_read = read(socket_fd, buffer+strlen(buffer), sizeof(buffer) - strlen(buffer));
+        int bytes_read = read(socket_fd, buffer + strlen(buffer), sizeof(buffer) - strlen(buffer));
         if (bytes_read == 0) {
             *result = CLOSED_CONNECTION;
             return;
@@ -40,7 +36,7 @@ void read_http_client_message(int socket_fd, http_client_message_t** msg, http_r
         }
     }
 
-    (*msg)->method = strdup(buffer + 4);
+    (*msg)->method = strdup(buffer);
     *result = MESSAGE;
 }
 
