@@ -15,34 +15,35 @@
 
 // Usage: ./webserver <port>
 
-int respond_to_http_client_message(int socket_fd, https_client_message_t* http_msg) {
-  char* response = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
+int respond_to_http_client_message(int socket_fd, http_client_message_t* http_msg) {
+  char* response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
   write(socket_fd, response, strlen(response));
   return 0;
-}
-
-void broadcastMessage(char* message, int clientSocket) {
-    send(clientSocket, message, strlen(message), 0);
 }
 
 void handleConnection(int* sockFdPtr) {
     int clientSocket = *sockFdPtr;
     free(sockFdPtr);
-    char message[1024];
-    int readBytes;
 
-    // Receive data from the client
-    while ((readBytes = recv(clientSocket, message, 1024, 0)) > 0) {
-        message[readBytes] = '\0';
-        printf("Client: %s\n", message);
+    while(1) {
+        printf("Handling connection on %d\n", clientSocket);
+        http_client_message_t* http_msg;
+        http_read_reuslt_t result;
 
-        // Broadcast message back to user
-        broadcastMessage(message, clientSocket);
+        http_client_message(clientSocket, &http_msg, &result);
+        if(result == BAD_REQUEST) {
+            printf("Bad request\n");
+            close(clientSocket);
+            return;
+        } else if(result == CLOSED_CONNECTION) {
+            printf("Closed connection\n");
+            close(clientSocket);
+            return;
+        }
+        
+        respond_to_http_client_message(clientSocket, http_msg);
     }
-
-    // Close client socket
-    close(clientSocket);
-    pthread_exit(NULL);
+    printf("Done with connection %d\n", clientSocket);
 }
 
 void startServer(int port) {
