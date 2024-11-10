@@ -17,7 +17,7 @@ typedef enum {
 } http_read_reuslt_t;
 
 // reponse: a message
-void http_client_message(int socket_fd, http_client_message_t** http_msg, http_read_reuslt_t* result);
+void read_http_client_message(int socket_fd, http_client_message_t** http_msg, http_read_reuslt_t* result);
 
 void http_client_message_free(http_client_message_t* http_msg);
 
