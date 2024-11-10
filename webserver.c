@@ -13,7 +13,7 @@
 #define PORT 25565 // Port default
 #define LISTEN_BACKLOG 5
 
-
+int numRequest = 0;
 // Usage: ./webserver <port>
 
 void msg_to_expressions(char* msg, int* a, int* b, char* op) {
@@ -73,12 +73,26 @@ void static_to_client(int socket_fd, char* path) {
 void get_stats_to_client(int socket_fd) {
     char response[1024];
 
-    sprintf(response, "Stats: \n");
+    sprintf(response, 
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html\r\n"
+        "Content-Length: %d\r\n"
+        "\r\n"
+        "<html>"
+        "<head><title>Server Stats</title></head>"
+        "<body>"
+        "<h1>Server Statistics</h1>"
+        "<p>Number of requests: %d</p>"
+        "</body>"
+        "</html>",
+        95 + snprintf(NULL, 0, "%d", numRequest), // Calculate content length dynamically
+        numRequest
+    );
 
     write(socket_fd, response, strlen(response));
 }
 int respond_to_http_client_message(int socket_fd, http_client_message_t* http_msg) {
-    
+    numRequest += 1;
     if(strncmp(http_msg->method, "GET ", 4) == 0) {
         char* response = "HTTP/1.1 Good Request\r\nContent-Length: 0\r\n\r\n";
         write(socket_fd, response, strlen(response));
