@@ -30,7 +30,7 @@ void handleConnection(int* sockFdPtr) {
         http_client_message_t* http_msg;
         http_read_reuslt_t result;
 
-        http_client_message(clientSocket, &http_msg, &result);
+        read_http_client_message(clientSocket, &http_msg, &result);
         if(result == BAD_REQUEST) {
             printf("Bad request\n");
             close(clientSocket);
@@ -42,6 +42,7 @@ void handleConnection(int* sockFdPtr) {
         }
         
         respond_to_http_client_message(clientSocket, http_msg);
+        http_client_message_free(http_msg);
     }
     printf("Done with connection %d\n", clientSocket);
 }
