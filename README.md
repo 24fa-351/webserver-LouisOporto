@@ -10,10 +10,9 @@
 * If bind fails -> error message (DONE)
 
 ## Things to add/do
-* Different Protocols () -> HTTP instead of "echo" (TRY)
+* Different Protocols () -> HTTP instead of "echo" (DONE)
 * Implement the various routes (/static) (TRY)
-* Create html to return (inital/debug) -> "return content" (TRY)
-* be graceful (errors, or at the end of connecion) (TRY)
+* Create html to return (inital/debug) -> "return content" (DONE)
+* be graceful (errors, or at the end of connecion) (DONE)
 
-
-NOTE: You have completed multithreaded, bind fails and
+* Implement /static, /calc, /stats (directory access, math, and history of calls)
