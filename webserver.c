@@ -12,6 +12,8 @@
 
 #define PORT 25565  // Port default
 #define LISTEN_BACKLOG 5
+#define MAXLEN 255
+#define MAXCHAR 1024
 
 int numRequest = 0;
 // Usage: ./webserver <port>
@@ -38,16 +40,16 @@ void calculate_math_to_client(int socket_fd, char* expression) {
         result = first * second;
     }
     if (op == '/') {
-        result = first / second
+        result = first / second;
     }
 
     char response[1024];
-    sprintf(response, "Result: %d\n", result);
+    snprintf(response, MAXLEN - 1, "Result: %d\n", result);  // 1024 - 1
     write(socket_fd, response, strlen(response));
 }
 
 void static_to_client(int socket_fd, char* path) {
-    char response[1024];
+    char response[MAXCHAR];
     char* file_path = path + 7;
 
     FILE* file = fopen(file_path, "r");
@@ -73,7 +75,7 @@ void static_to_client(int socket_fd, char* path) {
 // Prints a proper html that lists number of requests (total recevied bytes and
 // sent bytes)
 void get_stats_to_client(int socket_fd) {
-    char response[1024];
+    char response[MAXCHAR];
 
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
@@ -97,7 +99,7 @@ int respond_to_http_client_message(int socket_fd,
                                    http_client_message_t* http_msg) {
     numRequest += 1;
     if (strncmp(http_msg->method, "GET ", 4) == 0) {
-        char* response = "HTTP/1.1 Good Request\r\nContent-Length: 0\r\n\r\n";
+        char* response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
         write(socket_fd, response, strlen(response));
         return 0;
     }
