@@ -16,29 +16,29 @@
 int numRequest = 0;
 // Usage: ./webserver <port>
 
-void msg_to_expressions(char* msg, int* a, int* b, char* op) {
-    sscanf(msg, "%d %c %d", a, op, b);
+void msg_to_expressions(char* msg, int* first, int* second, char* op) {
+    sscanf(msg, "%d %c %d", first, op, second);
 }
 
-void calc_to_client(int socket_fd, char* expression) {
-    int a;
-    int b;
+void calculate_math_to_client(int socket_fd, char* expression) {
+    int first;
+    int second;
     char op;
 
-    msg_to_expressions(expression, &a, &b, &op);
+    msg_to_expressions(expression, &first, &second, &op);
 
     int result;
     if (op == '+') {
-        result = a + b;
+        result = first + second;
     }
     if (op == '-') {
-        result = a - b;
+        result = first - second;
     }
     if (op == '*') {
-        result = a * b;
+        result = first * second;
     }
     if (op == '/') {
-        result = a / b;
+        result = first / second
     }
 
     char response[1024];
@@ -113,7 +113,7 @@ int respond_to_http_client_message(int socket_fd,
     }
     if (strncmp(http_msg->method, "/calc", 5) == 0) {
         // Implement /calc
-        calc_to_client(socket_fd, http_msg->method + 6);
+        calculate_math_to_client(socket_fd, http_msg->method + 6);
         return 0;
     }
 }
